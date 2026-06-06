@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Karte">
+<title>✦ Karte | Beauty Salon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --cream: #FAF7F2; --blush: #E8C4B8; --rose: #C4745A;
+  --deep: #3A2420; --muted: #9A8880; --card: #FFFFFF;
+  --border: #EDE8E3; --danger: #C45A5A;
+}
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--cream);
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--deep);
+  max-width: 430px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.app { display: flex; flex-direction: column; height: 100%; }
+
+/* HEADER */
+.header {
+  background: var(--deep); color: var(--cream);
+  padding: 14px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(58,36,32,0.3);
+  flex-shrink: 0;
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+.header-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; letter-spacing: 2px; }
+.header-subtitle { font-size: 10px; color: var(--blush); letter-spacing: 3px; text-transform: uppercase; }
+.header-btn {
+  background: var(--rose); color: white; border: none;
+  border-radius: 20px; padding: 8px 16px; font-size: 13px;
+  font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+  font-weight: 500; transition: all 0.2s;
+}
+.header-btn:active { transform: scale(0.95); }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  background: var(--card); border-top: 1px solid var(--border);
+  display: flex; flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 20px rgba(58,36,32,0.08);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0 8px; cursor: pointer; border: none; background: none;
+  color: var(--muted); font-size: 10px; font-family: 'Noto Sans JP', sans-serif; gap: 3px;
+}
+.nav-item.active { color: var(--rose); }
+.nav-icon { font-size: 20px; }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; padding: 16px 16px 16px; -webkit-overflow-scrolling: touch; }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* SEARCH */
+.search-wrap { position: relative; margin-bottom: 16px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-input {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px 12px 40px; font-size: 14px;
+  font-family: 'Noto Sans JP', sans-serif; color: var(--deep); outline: none;
+}
+.search-input:focus { border-color: var(--blush); }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 10px; text-align: center; }
+.stat-num { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--rose); }
+.stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* SECTION TITLE */
+.section-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 13px;
+  font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin: 16px 0 10px;
+}
+.header-count { background: var(--rose); color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; margin-left: 6px; }
+
+/* CUSTOMER CARD */
+.customer-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px; margin-bottom: 10px;
+  cursor: pointer; display: flex; align-items: center; gap: 14px;
+  transition: transform 0.15s;
+}
+.customer-card:active { transform: scale(0.98); }
+.avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blush), var(--rose));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif; font-size: 20px; color: white; flex-shrink: 0;
+}
+.customer-info { flex: 1; min-width: 0; }
+.customer-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.customer-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.tag { background: #FFF0EC; border: 1px solid var(--blush); color: var(--rose); border-radius: 16px; padding: 3px 9px; font-size: 11px; }
+.last-visit-badge { background: linear-gradient(135deg, #FFF5F0, #FFE8E0); border: 1px solid var(--blush); border-radius: 8px; padding: 2px 8px; font-size: 10px; color: var(--rose); white-space: nowrap; }
+.visit-count { font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
+.card-right { text-align: right; flex-shrink: 0; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* PANEL OVERLAY */
+.panel-overlay {
+  position: fixed; inset: 0; background: rgba(58,36,32,0.5);
+  z-index: 200; display: flex; align-items: flex-end;
+  max-width: 430px; left: 50%; transform: translateX(-50%); width: 100%;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.panel-overlay.open { opacity: 1; pointer-events: all; }
+.panel {
+  background: var(--cream); border-radius: 24px 24px 0 0;
+  width: 100%; max-height: 90vh; overflow-y: auto;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34,1.2,0.64,1);
+}
+.panel-overlay.open .panel { transform: translateY(0); }
+.panel-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+}
+.panel-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; }
+.close-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--border); border: none; cursor: pointer; font-size: 16px; }
+.panel-body { padding: 16px 20px; }
+
+/* TABS */
+.tab-bar { display: flex; background: var(--cream); border-radius: 10px; padding: 3px; margin-bottom: 16px; border: 1px solid var(--border); }
+.tab { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; background: transparent; font-size: 11px; font-family: 'Noto Sans JP', sans-serif; color: var(--muted); cursor: pointer; }
+.tab.active { background: var(--card); color: var(--deep); font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* INFO GRID */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.info-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.info-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.info-value { font-size: 14px; font-weight: 500; }
+
+/* VISIT RECORD */
+.visit-record { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 8px; position: relative; }
+.visit-date { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.visit-date::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--blush); flex-shrink: 0; }
+.visit-menu { font-size: 14px; font-weight: 500; margin-bottom: 4px; padding-right: 60px; }
+.visit-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.visit-amount { position: absolute; right: 14px; top: 14px; font-size: 13px; font-weight: 500; color: var(--rose); }
+
+/* ALLERGY */
+.allergy-badge { display: inline-flex; align-items: center; gap: 4px; background: #FFF0F0; border: 1px solid #F0BBBB; border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--danger); margin: 2px; }
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; font-size: 14px;
+  font-family: 'Noto Sans JP', sans-serif; color: var(--deep); outline: none; -webkit-appearance: none; appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blush); }
+.form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* BUTTONS */
+.btn-primary { width: 100%; background: var(--rose); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-family: 'Noto Sans JP', sans-serif; font-weight: 500; cursor: pointer; margin-top: 8px; }
+.btn-primary:active { opacity: 0.85; }
+.btn-secondary { width: 100%; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 12px; padding: 13px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 8px; }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid #f0c0c0; border-radius: 10px; padding: 6px 14px; font-size: 12px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 8px; }
+.btn-add-visit { width: 100%; background: linear-gradient(135deg, #FFF5F0, #FFE8E0); color: var(--rose); border: 1px dashed var(--blush); border-radius: 12px; padding: 13px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 4px; }
+
+/* VISIT FORM BOX */
+.visit-form-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-top: 10px; display: none; }
+.visit-form-box.open { display: block; }
+
+/* STATS PAGE */
+.stats-list { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.stats-row-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); }
+.stats-row-item:last-child { border-bottom: none; }
+.stats-row-label { font-size: 13px; color: var(--muted); }
+.stats-row-val { font-size: 14px; font-weight: 500; }
+
+/* PANEL AVATAR */
+.panel-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--blush), var(--rose)); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 16px; color: white; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-title">✦ Karte</div>
+      <div class="header-subtitle">Beauty Salon</div>
+    </div>
+    <button class="header-btn" onclick="openNewForm()">＋ 新規登録</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <!-- LIST PAGE -->
+    <div id="page-list" class="page active">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">総顧客数</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-monthly">0</div><div class="stat-label">今月来店</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-regular">0</div><div class="stat-label">常連様</div></div>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="search-input" placeholder="名前・よみがな・電話番号で検索" oninput="renderList()">
+      </div>
+      <div class="section-title">顧客一覧 <span class="header-count" id="list-count">0</span></div>
+      <div id="customer-list"></div>
+    </div>
+
+    <!-- STATS PAGE -->
+    <div id="page-stats" class="page">
+      <div class="section-title">🎂 30日以内の誕生日</div>
+      <div id="birthday-list"></div>
+      <div class="section-title" style="margin-top:24px">📊 統計</div>
+      <div class="stats-list">
+        <div class="stats-row-item"><span class="stats-row-label">総顧客数</span><span class="stats-row-val" id="s-total">—</span></div>
+        <div class="stats-row-item"><span class="stats-row-label">総来店数</span><span class="stats-row-val" id="s-visits">—</span></div>
+        <div class="stats-row-item"><span class="stats-row-label">累計売上</span><span class="stats-row-val" style="color:var(--rose)" id="s-amount">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-list" onclick="showPage('list')">
+      <span class="nav-icon">👥</span>顧客一覧
+    </button>
+    <button class="nav-item" id="nav-stats" onclick="showPage('stats')">
+      <span class="nav-icon">📊</span>統計・誕生日
+    </button>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="panel-overlay" id="detail-panel">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="panel-avatar" id="detail-avatar"></div>
+        <div><div class="panel-title" id="detail-name"></div><div style="font-size:11px;color:var(--muted)" id="detail-kana"></div></div>
+      </div>
+      <button class="close-btn" onclick="closePanel('detail-panel')">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('info')">📋 基本情報</button>
+        <button class="tab" onclick="switchTab('visits')">📅 来店履歴</button>
+        <button class="tab" onclick="switchTab('memo')">📝 メモ</button>
+      </div>
+      <!-- INFO TAB -->
+      <div class="tab-content active" id="tab-info">
+        <div class="info-grid" id="detail-info-grid"></div>
+        <div id="detail-allergy-section"></div>
+        <div id="detail-tags-section"></div>
+        <button class="btn-secondary" onclick="openEditForm()">✏️ 情報を編集する</button>
+        <br><button class="btn-danger" onclick="deleteCurrentCustomer()">削除する</button>
+      </div>
+      <!-- VISITS TAB -->
+      <div class="tab-content" id="tab-visits">
+        <button class="btn-add-visit" id="visit-toggle-btn" onclick="toggleVisitForm()">＋ 来店記録を追加</button>
+        <div class="visit-form-box" id="visit-form-box">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">来店日</label><input class="form-input" type="date" id="vf-date"></div>
+            <div class="form-group"><label class="form-label">担当者</label><input class="form-input" id="vf-stylist" placeholder="山本"></div>
+          </div>
+          <div class="form-group"><label class="form-label">メニュー</label><input class="form-input" id="vf-menu" placeholder="カット + カラー"></div>
+          <div class="form-group"><label class="form-label">金額（円）</label><input class="form-input" type="number" id="vf-amount" placeholder="12000"></div>
+          <div class="form-group"><label class="form-label">施術メモ</label><textarea class="form-textarea" id="vf-note" placeholder="施術の詳細、お客様の要望など…"></textarea></div>
+          <button class="btn-primary" onclick="saveVisit()">記録を保存</button>
+        </div>
+        <div class="section-title" style="margin-top:16px">来店履歴</div>
+        <div id="visits-list"></div>
+      </div>
+      <!-- MEMO TAB -->
+      <div class="tab-content" id="tab-memo">
+        <div class="form-group">
+          <label class="form-label">カルテメモ</label>
+          <textarea class="form-textarea" id="memo-textarea" style="min-height:160px" placeholder="髪質、クセ、ご要望など自由にメモ…"></textarea>
+        </div>
+        <button class="btn-primary" onclick="saveMemo()">メモを保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PANEL -->
+<div class="panel-overlay" id="edit-panel">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      <span class="panel-title">情報を編集</span>
+      <button class="close-btn" onclick="closePanel('edit-panel')">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="form-group"><label class="form-label">お客様 No.</label><input class="form-input" id="ef-no"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">お名前</label><input class="form-input" id="ef-name"></div>
+        <div class="form-group"><label class="form-label">よみがな</label><input class="form-input" id="ef-kana"></div>
+      </div>
+      <div class="form-group"><label class="form-label">電話番号</label><input class="form-input" type="tel" id="ef-phone"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">誕生日</label><input class="form-input" type="date" id="ef-birthday"></div>
+        <div class="form-group"><label class="form-label">性別</label>
+          <select class="form-select" id="ef-gender">
+            <option value="female">女性</option><option value="male">男性</option><option value="other">その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">アレルギー（カンマ区切り）</label><input class="form-input" id="ef-allergies" placeholder="硫酸塩, パラベン"></div>
+      <div class="form-group"><label class="form-label">タグ（カンマ区切り）</label><input class="form-input" id="ef-tags" placeholder="常連, カラー希望"></div>
+      <button class="btn-primary" onclick="saveEdit()">保存する</button>
+      <button class="btn-secondary" onclick="closePanel('edit-panel')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CUSTOMER PANEL -->
+<div class="panel-overlay" id="new-panel">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      <span class="panel-title">新規顧客登録</span>
+      <button class="close-btn" onclick="closePanel('new-panel')">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="form-group"><label class="form-label">お客様 No. *</label><input class="form-input" id="nf-no" placeholder="例：0042"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">お名前 *</label><input class="form-input" id="nf-name" placeholder="田中 美咲"></div>
+        <div class="form-group"><label class="form-label">よみがな</label><input class="form-input" id="nf-kana" placeholder="タナカ ミサキ"></div>
+      </div>
+      <div class="form-group"><label class="form-label">電話番号</label><input class="form-input" type="tel" id="nf-phone" placeholder="090-0000-0000"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">誕生日</label><input class="form-input" type="date" id="nf-birthday"></div>
+        <div class="form-group"><label class="form-label">性別</label>
+          <select class="form-select" id="nf-gender">
+            <option value="female">女性</option><option value="male">男性</option><option value="other">その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">アレルギー（カンマ区切り）</label><input class="form-input" id="nf-allergies" placeholder="硫酸塩, パラベン"></div>
+      <div class="form-group"><label class="form-label">タグ（カンマ区切り）</label><input class="form-input" id="nf-tags" placeholder="常連, カラー希望"></div>
+      <div class="form-group"><label class="form-label">カルテメモ</label><textarea class="form-textarea" id="nf-memo" placeholder="髪質、ご要望、注意事項など…"></textarea></div>
+      <button class="btn-primary" onclick="saveNewCustomer()">登録する</button>
+      <button class="btn-secondary" onclick="closePanel('new-panel')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const INITIAL = [
+  { id:1, customerNo:"0001", name:"田中 美咲", kana:"タナカ ミサキ", phone:"090-1234-5678", birthday:"1990-05-15", gender:"female",
+    memo:"敏感肌。パーマ液は低刺激のものを使用。", allergies:["硫酸塩","パラベン"], tags:["常連","カラー希望"],
+    visits:[
+      {id:1,date:"2026-05-10",menu:"カット + カラー（ハイライト）",amount:18000,stylist:"山本",note:"16トーン希望。前回より明るめに仕上げた。"},
+      {id:2,date:"2026-02-22",menu:"カット + トリートメント",amount:12000,stylist:"山本",note:"乾燥が気になるとのこと。ケラチントリートメント施術。"}
+    ]
+  },
+  { id:2, customerNo:"0002", name:"鈴木 陽子", kana:"スズキ ヨウコ", phone:"080-9876-5432", birthday:"1985-11-03", gender:"female",
+    memo:"毎月来店。ショートスタイル固定。", allergies:[], tags:["毎月来店","ショート"],
+    visits:[
+      {id:1,date:"2026-05-05",menu:"カット",amount:6500,stylist:"佐藤",note:"サイドを短めに。前回通りのスタイル。"},
+      {id:2,date:"2026-04-01",menu:"カット",amount:6500,stylist:"佐藤",note:""}
+    ]
+  },
+  { id:3, customerNo:"0003", name:"山田 花子", kana:"ヤマダ ハナコ", phone:"070-5555-4321", birthday:"1998-03-20", gender:"female",
+    memo:"初回割引適用済み。縮毛矯正歴あり。", allergies:["アンモニア"], tags:["学生","縮毛矯正"],
+    visits:[
+      {id:1,date:"2026-04-18",menu:"カット + 縮毛矯正",amount:22000,stylist:"山本",note:"強いくせ毛。ストレートにしてすっきりさせた。"}
+    ]
+  }
+];
+
+let customers = [];
+let currentId = null;
+
+function load() {
+  try { const s = localStorage.getItem('beauty_karte'); if(s) { customers = JSON.parse(s); assignMissingNos(); return; } } catch(e){}
+  customers = JSON.parse(JSON.stringify(INITIAL));
+  save();
+}
+function save() { try { localStorage.setItem('beauty_karte', JSON.stringify(customers)); } catch(e){} }
+function getCustomer(id) { return customers.find(c => c.id === id); }
+
+function assignMissingNos() {
+  // 既存データにNoがない場合は補完
+  let max = customers.reduce((m,c) => { const n=parseInt(c.customerNo||'0'); return n>m?n:m; }, 0);
+  customers.forEach(c => { if(!c.customerNo) { max++; c.customerNo = String(max).padStart(4,'0'); } });
+}
+
+function nextCustomerNo() {
+  if(!customers.length) return '0001';
+  const max = customers.reduce((m,c) => { const n=parseInt(c.customerNo||'0'); return n>m?n:m; }, 0);
+  return String(max+1).padStart(4,'0');
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function initials(name) { return name ? name.charAt(0) : '?'; }
+function fmtDate(d) { if(!d) return '—'; const x=new Date(d); return `${x.getFullYear()}/${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}`; }
+function calcAge(b) { if(!b) return '—'; const t=new Date(),bd=new Date(b); let a=t.getFullYear()-bd.getFullYear(); if(t.getMonth()<bd.getMonth()||(t.getMonth()===bd.getMonth()&&t.getDate()<bd.getDate())) a--; return a; }
+function totalAmt(visits) { return visits.reduce((s,v)=>s+(parseInt(v.amount)||0),0); }
+function sorted() { return [...customers].sort((a,b)=>{ const ad=a.visits[0]?.date||'0',bd=b.visits[0]?.date||'0'; return bd.localeCompare(ad); }); }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='stats') renderStats();
+}
+
+// ============================================================
+// RENDER LIST
+// ============================================================
+function renderList() {
+  const q = document.getElementById('search-input').value;
+  const list = sorted().filter(c => !q || c.name.includes(q) || c.kana.includes(q) || c.phone.includes(q));
+
+  // stats
+  const now = new Date();
+  document.getElementById('stat-total').textContent = customers.length;
+  document.getElementById('stat-monthly').textContent = customers.filter(c=>{
+    const lv = c.visits[0]; if(!lv) return false;
+    return (now - new Date(lv.date))/(1000*60*60*24) <= 30;
+  }).length;
+  document.getElementById('stat-regular').textContent = customers.filter(c=>c.visits.length>=3).length;
+  document.getElementById('list-count').textContent = list.length;
+
+  const el = document.getElementById('customer-list');
+  if(list.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🌸</div><p>該当するお客様が見つかりません</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const lv = c.visits[0];
+    const tagsHtml = c.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+    return `<div class="customer-card" onclick="openDetail(${c.id})">
+      <div class="avatar">${initials(c.name)}</div>
+      <div class="customer-info">
+        <div class="customer-name">${c.name}</div>
+        <div class="customer-meta">${c.customerNo?`No.${c.customerNo}　`:''}${c.kana}　${c.phone}</div>
+        ${c.tags.length ? `<div class="tags-wrap">${tagsHtml}</div>` : ''}
+      </div>
+      <div class="card-right">
+        ${lv ? `<div class="last-visit-badge">${fmtDate(lv.date)}</div>` : ''}
+        <div class="visit-count">${c.visits.length}回来店</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// DETAIL PANEL
+// ============================================================
+function openDetail(id) {
+  currentId = id;
+  const c = getCustomer(id);
+  document.getElementById('detail-avatar').textContent = initials(c.name);
+  document.getElementById('detail-name').textContent = c.name;
+  document.getElementById('detail-kana').textContent = c.kana;
+  renderDetailInfo(c);
+  renderVisits(c);
+  document.getElementById('memo-textarea').value = c.memo || '';
+  switchTab('info');
+  openPanel('detail-panel');
+}
+
+function renderDetailInfo(c) {
+  document.getElementById('detail-info-grid').innerHTML = `
+    <div class="info-item"><div class="info-label">お客様 No.</div><div class="info-value" style="color:var(--rose)">No.${c.customerNo||'—'}</div></div>
+    <div class="info-item"><div class="info-label">電話番号</div><div class="info-value" style="font-size:13px">${c.phone||'—'}</div></div>
+    <div class="info-item"><div class="info-label">年齢</div><div class="info-value">${calcAge(c.birthday)}歳</div></div>
+    <div class="info-item"><div class="info-label">誕生日</div><div class="info-value" style="font-size:13px">${fmtDate(c.birthday)}</div></div>
+    <div class="info-item"><div class="info-label">来店回数</div><div class="info-value">${c.visits.length}回</div></div>
+    <div class="info-item"><div class="info-label">累計金額</div><div class="info-value" style="color:var(--rose)">¥${totalAmt(c.visits).toLocaleString()}</div></div>
+    <div class="info-item"><div class="info-label">最終来店</div><div class="info-value" style="font-size:13px">${c.visits[0]?fmtDate(c.visits[0].date):'—'}</div></div>
+  `;
+  document.getElementById('detail-allergy-section').innerHTML = c.allergies.length
+    ? `<div class="section-title" style="margin-top:4px">⚠️ アレルギー・禁忌</div><div>${c.allergies.map(a=>`<span class="allergy-badge">⚠ ${a}</span>`).join('')}</div>` : '';
+  document.getElementById('detail-tags-section').innerHTML = c.tags.length
+    ? `<div class="section-title">タグ</div><div class="tags-wrap">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : '';
+}
+
+function renderVisits(c) {
+  const el = document.getElementById('visits-list');
+  if(!c.visits.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>来店記録がまだありません</p></div>';
+    return;
+  }
+  el.innerHTML = c.visits.map(v => `
+    <div class="visit-record">
+      <div class="visit-date">${fmtDate(v.date)}${v.stylist?` ・ 担当：${v.stylist}`:''}</div>
+      <div class="visit-menu">${v.menu}</div>
+      ${v.note?`<div class="visit-note">${v.note}</div>`:''}
+      ${v.amount?`<div class="visit-amount">¥${v.amount.toLocaleString()}</div>`:''}
+      <button class="btn-danger" style="font-size:11px;padding:4px 10px" onclick="deleteVisit(${v.id})">削除</button>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names=['info','visits','memo'];
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ============================================================
+// VISIT FORM
+// ============================================================
+function toggleVisitForm() {
+  const box = document.getElementById('visit-form-box');
+  const btn = document.getElementById('visit-toggle-btn');
+  const open = box.classList.toggle('open');
+  btn.textContent = open ? '✕ キャンセル' : '＋ 来店記録を追加';
+  if(open) document.getElementById('vf-date').value = new Date().toISOString().split('T')[0];
+}
+
+function saveVisit() {
+  const menu = document.getElementById('vf-menu').value.trim();
+  if(!menu) return alert('メニューを入力してください');
+  const c = getCustomer(currentId);
+  const newVisit = {
+    id: Date.now(),
+    date: document.getElementById('vf-date').value,
+    menu,
+    amount: parseInt(document.getElementById('vf-amount').value)||0,
+    stylist: document.getElementById('vf-stylist').value,
+    note: document.getElementById('vf-note').value
+  };
+  c.visits.unshift(newVisit);
+  save();
+  renderVisits(c);
+  renderDetailInfo(c);
+  renderList();
+  // reset
+  ['vf-menu','vf-amount','vf-stylist','vf-note'].forEach(id=>document.getElementById(id).value='');
+  toggleVisitForm();
+}
+
+function deleteVisit(vid) {
+  if(!confirm('この来店記録を削除しますか？')) return;
+  const c = getCustomer(currentId);
+  c.visits = c.visits.filter(v=>v.id!==vid);
+  save(); renderVisits(c); renderDetailInfo(c); renderList();
+}
+
+// ============================================================
+// MEMO
+// ============================================================
+function saveMemo() {
+  const c = getCustomer(currentId);
+  c.memo = document.getElementById('memo-textarea').value;
+  save();
+  alert('メモを保存しました');
+}
+
+// ============================================================
+// EDIT
+// ============================================================
+function openEditForm() {
+  const c = getCustomer(currentId);
+  document.getElementById('ef-no').value = c.customerNo||'';
+  document.getElementById('ef-name').value = c.name;
+  document.getElementById('ef-kana').value = c.kana;
+  document.getElementById('ef-phone').value = c.phone;
+  document.getElementById('ef-birthday').value = c.birthday||'';
+  document.getElementById('ef-gender').value = c.gender||'female';
+  document.getElementById('ef-allergies').value = c.allergies.join(', ');
+  document.getElementById('ef-tags').value = c.tags.join(', ');
+  openPanel('edit-panel');
+}
+
+function saveEdit() {
+  const c = getCustomer(currentId);
+  c.customerNo = document.getElementById('ef-no').value.trim();
+  c.name = document.getElementById('ef-name').value.trim() || c.name;
+  c.kana = document.getElementById('ef-kana').value.trim();
+  c.phone = document.getElementById('ef-phone').value.trim();
+  c.birthday = document.getElementById('ef-birthday').value;
+  c.gender = document.getElementById('ef-gender').value;
+  c.allergies = document.getElementById('ef-allergies').value.split(',').map(s=>s.trim()).filter(Boolean);
+  c.tags = document.getElementById('ef-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  save();
+  document.getElementById('detail-name').textContent = c.name;
+  document.getElementById('detail-kana').textContent = c.kana;
+  document.getElementById('detail-avatar').textContent = initials(c.name);
+  renderDetailInfo(c);
+  renderList();
+  closePanel('edit-panel');
+}
+
+// ============================================================
+// DELETE CUSTOMER
+// ============================================================
+function deleteCurrentCustomer() {
+  if(!confirm('このお客様のカルテを削除しますか？')) return;
+  customers = customers.filter(c=>c.id!==currentId);
+  save(); renderList(); closePanel('detail-panel');
+}
+
+// ============================================================
+// NEW CUSTOMER
+// ============================================================
+function openNewForm() {
+  ['nf-no','nf-name','nf-kana','nf-phone','nf-allergies','nf-tags','nf-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nf-birthday').value='';
+  document.getElementById('nf-gender').value='female';
+  openPanel('new-panel');
+}
+
+function saveNewCustomer() {
+  const name = document.getElementById('nf-name').value.trim();
+  if(!name) return alert('お名前を入力してください');
+  const newC = {
+    id: Date.now(),
+    customerNo: document.getElementById('nf-no').value.trim(),
+    name,
+    kana: document.getElementById('nf-kana').value.trim(),
+    phone: document.getElementById('nf-phone').value.trim(),
+    birthday: document.getElementById('nf-birthday').value,
+    gender: document.getElementById('nf-gender').value,
+    memo: document.getElementById('nf-memo').value,
+    allergies: document.getElementById('nf-allergies').value.split(',').map(s=>s.trim()).filter(Boolean),
+    tags: document.getElementById('nf-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    visits: []
+  };
+  customers.unshift(newC);
+  save(); renderList(); closePanel('new-panel');
+}
+
+// ============================================================
+// STATS PAGE
+// ============================================================
+function renderStats() {
+  const now = new Date();
+  // birthdays within 30 days
+  const bdays = customers.filter(c=>{
+    if(!c.birthday) return false;
+    const b = new Date(c.birthday);
+    const next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+    if(next < now) next.setFullYear(now.getFullYear()+1);
+    return (next-now)/(1000*60*60*24) <= 30;
+  });
+  const bl = document.getElementById('birthday-list');
+  bl.innerHTML = bdays.length ? bdays.map(c=>`
+    <div class="customer-card" onclick="openDetail(${c.id})">
+      <div class="avatar">${initials(c.name)}</div>
+      <div class="customer-info"><div class="customer-name">${c.name}</div><div class="customer-meta">🎂 ${fmtDate(c.birthday)}</div></div>
+      <span style="font-size:20px">🎉</span>
+    </div>`).join('')
+    : '<div class="empty-state"><div class="empty-icon">🎂</div><p>近日中の誕生日はありません</p></div>';
+  document.getElementById('s-total').textContent = customers.length + ' 人';
+  document.getElementById('s-visits').textContent = customers.reduce((s,c)=>s+c.visits.length,0) + ' 回';
+  document.getElementById('s-amount').textContent = '¥' + customers.reduce((s,c)=>s+totalAmt(c.visits),0).toLocaleString();
+}
+
+// ============================================================
+// PANEL
+// ============================================================
+function openPanel(id) { document.getElementById(id).classList.add('open'); }
+function closePanel(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on overlay click
+document.querySelectorAll('.panel-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+renderList();
+</script>
+</body>
+</html>
