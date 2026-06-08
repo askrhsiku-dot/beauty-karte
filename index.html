@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Karte">
-<title>髪屋工房| Client Record</title>
+<title>✦ Karte | Beauty Salon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -209,10 +209,13 @@ body {
   <!-- HEADER -->
   <div class="header">
     <div>
-      <div class="header-title">髪屋工房</div>
-      <div class="header-subtitle">Client Record</div>
+      <div class="header-title" id="app-title">髪屋工房</div>
+      <div class="header-subtitle" id="app-subtitle">Beauty Salon</div>
     </div>
-    <button class="header-btn" onclick="openNewForm()">＋ 新規登録</button>
+    <div style="display:flex;gap:8px">
+      <button class="header-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.3);padding:8px 10px" onclick="openSettingsPanel()">⚙️</button>
+      <button class="header-btn" onclick="openNewForm()">＋ 新規登録</button>
+    </div>
   </div>
 
   <!-- CONTENT -->
@@ -234,13 +237,12 @@ body {
 
     <!-- STATS PAGE -->
     <div id="page-stats" class="page">
-      <div class="section-title">🎂 30日以内の誕生日</div>
-      <div id="birthday-list"></div>
-      <div class="section-title" style="margin-top:24px">📊 統計</div>
+      <div class="section-title">📊 統計</div>
       <div class="stats-list">
         <div class="stats-row-item"><span class="stats-row-label">総顧客数</span><span class="stats-row-val" id="s-total">—</span></div>
         <div class="stats-row-item"><span class="stats-row-label">総来店数</span><span class="stats-row-val" id="s-visits">—</span></div>
         <div class="stats-row-item"><span class="stats-row-label">累計売上</span><span class="stats-row-val" style="color:var(--rose)" id="s-amount">—</span></div>
+        <div class="stats-row-item"><span class="stats-row-label">平均来店周期（全体）</span><span class="stats-row-val" id="s-cycle">—</span></div>
       </div>
       <div class="section-title" style="margin-top:24px">📥 データ取込</div>
       <button class="btn-add-visit" style="margin-top:0" onclick="openPanel('csv-panel')">📂 CSVファイルから顧客を一括登録</button>
@@ -253,7 +255,7 @@ body {
       <span class="nav-icon">👥</span>顧客一覧
     </button>
     <button class="nav-item" id="nav-stats" onclick="showPage('stats')">
-      <span class="nav-icon">📊</span>統計・誕生日
+      <span class="nav-icon">📊</span>統計
     </button>
   </div>
 </div>
@@ -370,6 +372,29 @@ body {
       <div class="form-group"><label class="form-label">カルテメモ</label><textarea class="form-textarea" id="nf-memo" placeholder="髪質、ご要望、注意事項など…"></textarea></div>
       <button class="btn-primary" onclick="saveNewCustomer()">登録する</button>
       <button class="btn-secondary" onclick="closePanel('new-panel')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="panel-overlay" id="settings-panel">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      <span class="panel-title">⚙️ 設定</span>
+      <button class="close-btn" onclick="closePanel('settings-panel')">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="form-group">
+        <label class="form-label">アプリ名</label>
+        <input class="form-input" id="setting-title" placeholder="例：髪屋工房">
+      </div>
+      <div class="form-group">
+        <label class="form-label">サブタイトル</label>
+        <input class="form-input" id="setting-subtitle" placeholder="例：Beauty Salon">
+      </div>
+      <button class="btn-primary" onclick="saveSettings()">保存する</button>
+      <button class="btn-secondary" onclick="closePanel('settings-panel')">キャンセル</button>
     </div>
   </div>
 </div>
@@ -537,7 +562,19 @@ function openDetail(id) {
   openPanel('detail-panel');
 }
 
+function calcCycle(visits) {
+  if(visits.length < 2) return null;
+  const sorted = [...visits].sort((a,b)=>a.date.localeCompare(b.date));
+  let total = 0;
+  for(let i=1; i<sorted.length; i++) {
+    total += (new Date(sorted[i].date) - new Date(sorted[i-1].date)) / (1000*60*60*24);
+  }
+  return Math.round(total / (sorted.length - 1));
+}
+
 function renderDetailInfo(c) {
+  const cycle = calcCycle(c.visits);
+  const cycleText = cycle ? `約${cycle}日` : '（来店2回以上で算出）';
   document.getElementById('detail-info-grid').innerHTML = `
     <div class="info-item"><div class="info-label">お客様 No.</div><div class="info-value" style="color:var(--rose)">No.${c.customerNo||'—'}</div></div>
     <div class="info-item"><div class="info-label">電話番号</div><div class="info-value" style="font-size:13px">${c.phone||'—'}</div></div>
@@ -546,6 +583,7 @@ function renderDetailInfo(c) {
     <div class="info-item"><div class="info-label">来店回数</div><div class="info-value">${c.visits.length}回</div></div>
     <div class="info-item"><div class="info-label">累計金額</div><div class="info-value" style="color:var(--rose)">¥${totalAmt(c.visits).toLocaleString()}</div></div>
     <div class="info-item"><div class="info-label">最終来店</div><div class="info-value" style="font-size:13px">${c.visits[0]?fmtDate(c.visits[0].date):'—'}</div></div>
+    <div class="info-item" style="grid-column:1/-1"><div class="info-label">🔄 平均来店周期</div><div class="info-value" style="color:var(--rose)">${cycleText}</div></div>
   `;
   document.getElementById('detail-allergy-section').innerHTML = c.allergies.length
     ? `<div class="section-title" style="margin-top:4px">⚠️ アレルギー・禁忌</div><div>${c.allergies.map(a=>`<span class="allergy-badge">⚠ ${a}</span>`).join('')}</div>` : '';
@@ -710,26 +748,17 @@ function saveNewCustomer() {
 // STATS PAGE
 // ============================================================
 function renderStats() {
-  const now = new Date();
-  // birthdays within 30 days
-  const bdays = customers.filter(c=>{
-    if(!c.birthday) return false;
-    const b = new Date(c.birthday);
-    const next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
-    if(next < now) next.setFullYear(now.getFullYear()+1);
-    return (next-now)/(1000*60*60*24) <= 30;
-  });
-  const bl = document.getElementById('birthday-list');
-  bl.innerHTML = bdays.length ? bdays.map(c=>`
-    <div class="customer-card" onclick="openDetail(${c.id})">
-      <div class="avatar">${initials(c.name)}</div>
-      <div class="customer-info"><div class="customer-name">${c.name}</div><div class="customer-meta">🎂 ${fmtDate(c.birthday)}</div></div>
-      <span style="font-size:20px">🎉</span>
-    </div>`).join('')
-    : '<div class="empty-state"><div class="empty-icon">🎂</div><p>近日中の誕生日はありません</p></div>';
   document.getElementById('s-total').textContent = customers.length + ' 人';
   document.getElementById('s-visits').textContent = customers.reduce((s,c)=>s+c.visits.length,0) + ' 回';
   document.getElementById('s-amount').textContent = '¥' + customers.reduce((s,c)=>s+totalAmt(c.visits),0).toLocaleString();
+  // 全顧客の平均来店周期
+  const cycles = customers.map(c=>calcCycle(c.visits)).filter(n=>n!==null);
+  if(cycles.length) {
+    const avg = Math.round(cycles.reduce((s,n)=>s+n,0)/cycles.length);
+    document.getElementById('s-cycle').textContent = `約${avg}日`;
+  } else {
+    document.getElementById('s-cycle').textContent = '（データ不足）';
+  }
 }
 
 // ============================================================
@@ -838,9 +867,41 @@ function importCSV() {
 }
 
 // ============================================================
+// SETTINGS
+// ============================================================
+function loadSettings() {
+  try {
+    const s = localStorage.getItem('beauty_karte_settings');
+    if(s) {
+      const settings = JSON.parse(s);
+      if(settings.title) document.getElementById('app-title').textContent = settings.title;
+      if(settings.subtitle) document.getElementById('app-subtitle').textContent = settings.subtitle;
+    }
+  } catch(e){}
+}
+
+function openSettingsPanel() {
+  document.getElementById('setting-title').value = document.getElementById('app-title').textContent;
+  document.getElementById('setting-subtitle').value = document.getElementById('app-subtitle').textContent;
+  openPanel('settings-panel');
+}
+
+function saveSettings() {
+  const title = document.getElementById('setting-title').value.trim();
+  const subtitle = document.getElementById('setting-subtitle').value.trim();
+  if(title) document.getElementById('app-title').textContent = title;
+  if(subtitle) document.getElementById('app-subtitle').textContent = subtitle;
+  try {
+    localStorage.setItem('beauty_karte_settings', JSON.stringify({ title: title||'髪屋工房', subtitle: subtitle||'Beauty Salon' }));
+  } catch(e){}
+  closePanel('settings-panel');
+}
+
+// ============================================================
 // INIT
 // ============================================================
 load();
+loadSettings();
 renderList();
 </script>
 </body>
