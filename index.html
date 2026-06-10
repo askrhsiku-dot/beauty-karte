@@ -212,10 +212,7 @@ body {
       <div class="header-title" id="app-title">髪屋工房</div>
       <div class="header-subtitle" id="app-subtitle">Beauty Salon</div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="header-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.3);padding:8px 10px" onclick="openSettingsPanel()">⚙️</button>
-      <button class="header-btn" onclick="openNewForm()">＋ 新規登録</button>
-    </div>
+    <button class="header-btn" onclick="openNewForm()">＋ 新規登録</button>
   </div>
 
   <!-- CONTENT -->
@@ -229,7 +226,17 @@ body {
       </div>
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input class="search-input" id="search-input" placeholder="名前・よみがな・電話番号で検索" oninput="renderList()">
+        <input class="search-input" id="search-input" placeholder="名前・よみがな・No.・電話番号で検索" oninput="renderList()">
+      </div>
+      <!-- SORT CONTROLS -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <select class="form-select" id="sort-key" onchange="renderList()" style="flex:1;padding:8px 12px;font-size:12px">
+          <option value="recent">最近来店順</option>
+          <option value="kana">50音順</option>
+          <option value="no">No.順</option>
+          <option value="visits">来店回数順</option>
+        </select>
+        <button id="sort-dir-btn" onclick="toggleSortDir()" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--deep)">↓ 降順</button>
       </div>
       <div class="section-title">顧客一覧 <span class="header-count" id="list-count">0</span></div>
       <div id="customer-list"></div>
@@ -256,6 +263,9 @@ body {
     </button>
     <button class="nav-item" id="nav-stats" onclick="showPage('stats')">
       <span class="nav-icon">📊</span>統計
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="openSettingsPanel()">
+      <span class="nav-icon">⚙️</span>設定
     </button>
   </div>
 </div>
@@ -493,7 +503,34 @@ function initials(name) { return name ? name.charAt(0) : '?'; }
 function fmtDate(d) { if(!d) return '—'; const x=new Date(d); return `${x.getFullYear()}/${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}`; }
 function calcAge(b) { if(!b) return '—'; const t=new Date(),bd=new Date(b); let a=t.getFullYear()-bd.getFullYear(); if(t.getMonth()<bd.getMonth()||(t.getMonth()===bd.getMonth()&&t.getDate()<bd.getDate())) a--; return a; }
 function totalAmt(visits) { return visits.reduce((s,v)=>s+(parseInt(v.amount)||0),0); }
-function sorted() { return [...customers].sort((a,b)=>{ const ad=a.visits[0]?.date||'0',bd=b.visits[0]?.date||'0'; return bd.localeCompare(ad); }); }
+
+let sortDir = 'desc';
+
+function toggleSortDir() {
+  sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  document.getElementById('sort-dir-btn').textContent = sortDir === 'desc' ? '↓ 降順' : '↑ 昇順';
+  renderList();
+}
+
+function getSorted() {
+  const key = document.getElementById('sort-key') ? document.getElementById('sort-key').value : 'recent';
+  const dir = sortDir === 'desc' ? -1 : 1;
+  return [...customers].sort((a, b) => {
+    if(key === 'recent') {
+      const ad = a.visits[0]?.date || '0', bd = b.visits[0]?.date || '0';
+      return dir * bd.localeCompare(ad);
+    } else if(key === 'kana') {
+      const ak = a.kana || a.name || '', bk = b.kana || b.name || '';
+      return dir * ak.localeCompare(bk, 'ja');
+    } else if(key === 'no') {
+      const an = parseInt(a.customerNo || '0'), bn = parseInt(b.customerNo || '0');
+      return dir * (an - bn);
+    } else if(key === 'visits') {
+      return dir * (a.visits.length - b.visits.length);
+    }
+    return 0;
+  });
+}
 
 // ============================================================
 // NAVIGATION
@@ -502,7 +539,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
+  if(document.getElementById('nav-'+name)) document.getElementById('nav-'+name).classList.add('active');
   if(name==='stats') renderStats();
 }
 
@@ -510,8 +547,13 @@ function showPage(name) {
 // RENDER LIST
 // ============================================================
 function renderList() {
-  const q = document.getElementById('search-input').value;
-  const list = sorted().filter(c => !q || c.name.includes(q) || c.kana.includes(q) || c.phone.includes(q));
+  const q = (document.getElementById('search-input').value || '').trim();
+  const list = getSorted().filter(c => {
+    if(!q) return true;
+    return c.name.includes(q) || c.kana.includes(q) ||
+      (c.customerNo && c.customerNo.includes(q)) ||
+      (c.phone && c.phone.replace(/-/g,'').includes(q.replace(/-/g,'')));
+  });
 
   // stats
   const now = new Date();
