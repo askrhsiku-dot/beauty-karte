@@ -253,6 +253,9 @@ body {
       </div>
       <div class="section-title" style="margin-top:24px">📥 データ取込</div>
       <button class="btn-add-visit" style="margin-top:0" onclick="openPanel('csv-panel')">📂 CSVファイルから顧客を一括登録</button>
+      <div class="section-title" style="margin-top:24px">💾 バックアップ</div>
+      <button class="btn-add-visit" style="margin-top:0;border-color:#7BA88A;color:#7BA88A;background:linear-gradient(135deg,#F0FFF4,#E0F5E8)" onclick="exportBackup()">📤 全データをCSVで書き出す</button>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">書き出したCSVはGoogleドライブやメールに保存しておくと安心です。復元はCSV取込から行えます。</div>
     </div>
   </div>
 
@@ -937,6 +940,46 @@ function saveSettings() {
     localStorage.setItem('beauty_karte_settings', JSON.stringify({ title: title||'髪屋工房', subtitle: subtitle||'Beauty Salon' }));
   } catch(e){}
   closePanel('settings-panel');
+}
+
+// ============================================================
+// BACKUP EXPORT
+// ============================================================
+function exportBackup() {
+  if(!customers.length) { alert('顧客データがありません'); return; }
+
+  // 顧客基本情報CSV
+  const header = ['No.','名前','よみがな','電話番号','誕生日','性別','アレルギー','タグ','メモ','来店回数','累計金額','最終来店'];
+  const rows = customers.map(c => [
+    c.customerNo||'',
+    c.name||'',
+    c.kana||'',
+    c.phone||'',
+    c.birthday||'',
+    c.gender||'',
+    c.allergies.join('|'),
+    c.tags.join('|'),
+    (c.memo||'').replace(/,/g,'、').replace(/\n/g,' '),
+    c.visits.length,
+    totalAmt(c.visits),
+    c.visits[0]?.date||''
+  ]);
+
+  const csvContent = [header, ...rows]
+    .map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+
+  // BOM付きUTF-8（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `karte_backup_${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================
