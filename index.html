@@ -636,6 +636,11 @@ function renderDetailInfo(c) {
     ? `<div class="section-title">タグ</div><div class="tags-wrap">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : '';
 }
 
+function trimMenu(menu) {
+  // 括弧（）内の詳細テキストを非表示にする
+  return (menu||'').replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').trim();
+}
+
 function renderVisits(c) {
   const el = document.getElementById('visits-list');
   if(!c.visits.length) {
@@ -645,7 +650,7 @@ function renderVisits(c) {
   el.innerHTML = c.visits.map(v => `
     <div class="visit-record" id="vr-${v.id}">
       <div class="visit-date">${fmtDate(v.date)}${v.stylist?` ・ 担当：${v.stylist}`:''}</div>
-      <div class="visit-menu">${v.menu}</div>
+      <div class="visit-menu">${trimMenu(v.menu)}</div>
       ${v.amount?`<div class="visit-amount">¥${v.amount.toLocaleString()}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:8px">
         <button class="btn-secondary" style="font-size:11px;padding:5px 12px;margin-top:0;width:auto" onclick="editVisit(${v.id})">✏️ 編集</button>
