@@ -189,29 +189,6 @@ body {
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid #f0c0c0; border-radius: 10px; padding: 6px 14px; font-size: 12px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 8px; }
 .btn-add-visit { width: 100%; background: linear-gradient(135deg, #FFF5F0, #FFE8E0); color: var(--rose); border: 1px dashed var(--blush); border-radius: 12px; padding: 13px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 4px; }
 
-/* MENU CHIPS */
-.menu-chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-.menu-chip {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
-  padding: 8px 14px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif;
-  color: var(--deep); cursor: pointer;
-}
-.menu-chip-code { font-family: 'Cormorant Garamond', serif; font-weight: 600; color: var(--rose); }
-.menu-chip.selected { background: linear-gradient(135deg, #FFF5F0, #FFE8E0); border-color: var(--rose); color: var(--rose); }
-.menu-chip.selected .menu-chip-code { color: var(--rose); }
-.menu-detail-group { margin-top: 10px; }
-
-/* MENU ITEM SETTINGS */
-.menu-item-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.menu-item-row:last-child { border-bottom: none; }
-.menu-item-code-badge {
-  background: #FFF0EC; border: 1px solid var(--blush); color: var(--rose);
-  border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600;
-  min-width: 32px; text-align: center; font-family: 'Cormorant Garamond', serif;
-}
-.menu-item-name-text { flex: 1; font-size: 13px; }
-
 /* VISIT FORM BOX */
 .visit-form-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-top: 10px; display: none; }
 .visit-form-box.open { display: block; }
@@ -329,11 +306,7 @@ body {
             <div class="form-group"><label class="form-label">来店日</label><input class="form-input" type="date" id="vf-date"></div>
             <div class="form-group"><label class="form-label">担当者</label><input class="form-input" id="vf-stylist" placeholder="山本"></div>
           </div>
-          <div class="form-group">
-            <label class="form-label">メニュー（複数選択可）</label>
-            <div class="menu-chips-wrap" id="vf-menu-select"></div>
-          </div>
-          <div id="vf-menu-details"></div>
+          <div class="form-group"><label class="form-label">メニュー</label><input class="form-input" id="vf-menu" placeholder="カット + カラー"></div>
           <div class="form-group"><label class="form-label">金額（円）</label><input class="form-input" type="number" id="vf-amount" placeholder="12000"></div>
           <div class="form-group"><label class="form-label">施術メモ</label><textarea class="form-textarea" id="vf-note" placeholder="施術の詳細、お客様の要望など…"></textarea></div>
           <button class="btn-primary" onclick="saveVisit()">記録を保存</button>
@@ -435,14 +408,6 @@ body {
       </div>
       <button class="btn-primary" onclick="saveSettings()">保存する</button>
       <button class="btn-secondary" onclick="closePanel('settings-panel')">キャンセル</button>
-
-      <div class="section-title" style="margin-top:24px">✂️ 施術メニュー管理</div>
-      <div id="menu-items-list"></div>
-      <div class="form-row" style="margin-top:8px">
-        <div class="form-group" style="margin-bottom:0"><input class="form-input" id="mi-code" placeholder="略号（例：Tr）" maxlength="4"></div>
-        <div class="form-group" style="margin-bottom:0"><input class="form-input" id="mi-name" placeholder="名前（例：トリートメント）"></div>
-      </div>
-      <button class="btn-add-visit" style="margin-top:8px" onclick="addMenuItem()">＋ メニューを追加</button>
     </div>
   </div>
 </div>
@@ -514,28 +479,6 @@ const INITIAL = [
 let customers = [];
 let currentId = null;
 
-// ============================================================
-// MENU ITEMS (施術メニュー略号)
-// ============================================================
-const DEFAULT_MENU_ITEMS = [
-  { code:'C', name:'カット' },
-  { code:'H', name:'カラー' },
-  { code:'P', name:'パーマ' },
-  { code:'Tr', name:'トリートメント' },
-  { code:'K', name:'縮毛矯正' }
-];
-
-let menuItems = [];
-let editingMenuIdx = -1;
-
-function loadMenuItems() {
-  try {
-    const s = localStorage.getItem('beauty_karte_menu_items');
-    menuItems = s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_MENU_ITEMS));
-  } catch(e) { menuItems = JSON.parse(JSON.stringify(DEFAULT_MENU_ITEMS)); }
-}
-function saveMenuItems() { try { localStorage.setItem('beauty_karte_menu_items', JSON.stringify(menuItems)); } catch(e){} }
-
 function load() {
   try { const s = localStorage.getItem('beauty_karte'); if(s) { customers = JSON.parse(s); assignMissingNos(); return; } } catch(e){}
   customers = JSON.parse(JSON.stringify(INITIAL));
@@ -560,7 +503,6 @@ function nextCustomerNo() {
 // UTILS
 // ============================================================
 function initials(name) { return name ? name.charAt(0) : '?'; }
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d) { if(!d) return '—'; const x=new Date(d); return `${x.getFullYear()}/${String(x.getMonth()+1).padStart(2,'0')}/${String(x.getDate()).padStart(2,'0')}`; }
 function calcAge(b) { if(!b) return '—'; const t=new Date(),bd=new Date(b); let a=t.getFullYear()-bd.getFullYear(); if(t.getMonth()<bd.getMonth()||(t.getMonth()===bd.getMonth()&&t.getDate()<bd.getDate())) a--; return a; }
 function totalAmt(visits) { return visits.reduce((s,v)=>s+(parseInt(v.amount)||0),0); }
@@ -701,14 +643,53 @@ function renderVisits(c) {
     return;
   }
   el.innerHTML = c.visits.map(v => `
-    <div class="visit-record">
+    <div class="visit-record" id="vr-${v.id}">
       <div class="visit-date">${fmtDate(v.date)}${v.stylist?` ・ 担当：${v.stylist}`:''}</div>
       <div class="visit-menu">${v.menu}</div>
-      ${v.note?`<div class="visit-note">${v.note}</div>`:''}
       ${v.amount?`<div class="visit-amount">¥${v.amount.toLocaleString()}</div>`:''}
-      <button class="btn-danger" style="font-size:11px;padding:4px 10px" onclick="deleteVisit(${v.id})">削除</button>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn-secondary" style="font-size:11px;padding:5px 12px;margin-top:0;width:auto" onclick="editVisit(${v.id})">✏️ 編集</button>
+        <button class="btn-danger" style="font-size:11px;padding:5px 12px;margin-top:0" onclick="deleteVisit(${v.id})">削除</button>
+      </div>
     </div>
   `).join('');
+}
+
+function editVisit(vid) {
+  const c = getCustomer(currentId);
+  const v = c.visits.find(x=>x.id===vid);
+  if(!v) return;
+  const el = document.getElementById(`vr-${vid}`);
+  el.innerHTML = `
+    <div class="form-row" style="margin-bottom:8px">
+      <div><label class="form-label">来店日</label><input class="form-input" id="ev-date-${vid}" value="${v.date}" type="date"></div>
+      <div><label class="form-label">担当者</label><input class="form-input" id="ev-stylist-${vid}" value="${v.stylist||''}" placeholder="山本"></div>
+    </div>
+    <div style="margin-bottom:8px"><label class="form-label">メニュー</label><input class="form-input" id="ev-menu-${vid}" value="${v.menu||''}"></div>
+    <div style="margin-bottom:8px"><label class="form-label">金額（円）</label><input class="form-input" type="number" id="ev-amount-${vid}" value="${v.amount||''}"></div>
+    <div style="margin-bottom:8px"><label class="form-label">施術メモ</label><textarea class="form-textarea" id="ev-note-${vid}" style="min-height:60px">${v.note||''}</textarea></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn-primary" style="margin-top:0;padding:10px" onclick="saveVisitEdit(${vid})">保存</button>
+      <button class="btn-secondary" style="margin-top:0;padding:10px" onclick="renderVisits(getCustomer(currentId))">キャンセル</button>
+    </div>
+  `;
+}
+
+function saveVisitEdit(vid) {
+  const c = getCustomer(currentId);
+  const v = c.visits.find(x=>x.id===vid);
+  if(!v) return;
+  v.date = document.getElementById(`ev-date-${vid}`).value;
+  v.stylist = document.getElementById(`ev-stylist-${vid}`).value;
+  v.menu = document.getElementById(`ev-menu-${vid}`).value;
+  v.amount = parseInt(document.getElementById(`ev-amount-${vid}`).value)||0;
+  v.note = document.getElementById(`ev-note-${vid}`).value;
+  // 日付順に並び替え
+  c.visits.sort((a,b)=>b.date.localeCompare(a.date));
+  save();
+  renderVisits(c);
+  renderDetailInfo(c);
+  renderList();
 }
 
 // ============================================================
@@ -726,69 +707,17 @@ function switchTab(name) {
 // ============================================================
 // VISIT FORM
 // ============================================================
-let selectedMenuCodes = [];
-let menuDetails = {};
-
 function toggleVisitForm() {
   const box = document.getElementById('visit-form-box');
   const btn = document.getElementById('visit-toggle-btn');
   const open = box.classList.toggle('open');
   btn.textContent = open ? '✕ キャンセル' : '＋ 来店記録を追加';
-  if(open) {
-    document.getElementById('vf-date').value = new Date().toISOString().split('T')[0];
-    selectedMenuCodes = [];
-    menuDetails = {};
-    renderVisitMenuChips();
-  }
-}
-
-function renderVisitMenuChips() {
-  const el = document.getElementById('vf-menu-select');
-  el.innerHTML = menuItems.map(m => `
-    <button type="button" class="menu-chip ${selectedMenuCodes.includes(m.code)?'selected':''}" data-code="${escapeHtml(m.code)}">
-      <span class="menu-chip-code">${escapeHtml(m.code)}</span>${escapeHtml(m.name)}
-    </button>
-  `).join('');
-  el.querySelectorAll('.menu-chip').forEach(btn => {
-    btn.addEventListener('click', () => toggleMenuChip(btn.dataset.code));
-  });
-  renderMenuDetailInputs();
-}
-
-function toggleMenuChip(code) {
-  const idx = selectedMenuCodes.indexOf(code);
-  if(idx >= 0) { selectedMenuCodes.splice(idx, 1); delete menuDetails[code]; }
-  else { selectedMenuCodes.push(code); }
-  renderVisitMenuChips();
-}
-
-function renderMenuDetailInputs() {
-  const el = document.getElementById('vf-menu-details');
-  const selected = menuItems.filter(m => selectedMenuCodes.includes(m.code));
-  el.innerHTML = selected.map(m => `
-    <div class="form-group menu-detail-group">
-      <label class="form-label">${escapeHtml(m.name)}の詳細</label>
-      <input class="form-input" data-menu-code="${escapeHtml(m.code)}" placeholder="例：16トーン、ハイライトなど" value="${escapeHtml(menuDetails[m.code]||'')}">
-    </div>
-  `).join('');
-  el.querySelectorAll('input[data-menu-code]').forEach(input => {
-    input.addEventListener('input', () => { menuDetails[input.dataset.menuCode] = input.value; });
-  });
-}
-
-function buildMenuString() {
-  return menuItems
-    .filter(m => selectedMenuCodes.includes(m.code))
-    .map(m => {
-      const detail = (menuDetails[m.code]||'').trim();
-      return detail ? `${m.name}（${detail}）` : m.name;
-    })
-    .join(' + ');
+  if(open) document.getElementById('vf-date').value = new Date().toISOString().split('T')[0];
 }
 
 function saveVisit() {
-  const menu = buildMenuString();
-  if(!menu) return alert('メニューを選択してください');
+  const menu = document.getElementById('vf-menu').value.trim();
+  if(!menu) return alert('メニューを入力してください');
   const c = getCustomer(currentId);
   const newVisit = {
     id: Date.now(),
@@ -804,7 +733,7 @@ function saveVisit() {
   renderDetailInfo(c);
   renderList();
   // reset
-  ['vf-amount','vf-stylist','vf-note'].forEach(id=>document.getElementById(id).value='');
+  ['vf-menu','vf-amount','vf-stylist','vf-note'].forEach(id=>document.getElementById(id).value='');
   toggleVisitForm();
 }
 
@@ -1038,76 +967,7 @@ function loadSettings() {
 function openSettingsPanel() {
   document.getElementById('setting-title').value = document.getElementById('app-title').textContent;
   document.getElementById('setting-subtitle').value = document.getElementById('app-subtitle').textContent;
-  editingMenuIdx = -1;
-  renderMenuItemsSettings();
   openPanel('settings-panel');
-}
-
-// ============================================================
-// MENU ITEMS SETTINGS
-// ============================================================
-function renderMenuItemsSettings() {
-  const el = document.getElementById('menu-items-list');
-  if(!menuItems.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0">メニューが登録されていません</div>';
-    return;
-  }
-  el.innerHTML = menuItems.map((m,i) => {
-    if(i === editingMenuIdx) {
-      return `<div class="menu-item-row">
-        <input class="form-input" style="flex:0 0 70px;padding:8px" id="mi-edit-code" value="${escapeHtml(m.code)}" maxlength="4">
-        <input class="form-input" style="flex:1;padding:8px" id="mi-edit-name" value="${escapeHtml(m.name)}">
-        <button class="btn-danger" style="padding:6px 10px;font-size:11px;color:var(--rose);border-color:var(--blush)" onclick="saveMenuItemEdit(${i})">保存</button>
-        <button class="btn-danger" style="padding:6px 10px;font-size:11px" onclick="cancelMenuItemEdit()">キャンセル</button>
-      </div>`;
-    }
-    return `<div class="menu-item-row">
-      <span class="menu-item-code-badge">${escapeHtml(m.code)}</span>
-      <span class="menu-item-name-text">${escapeHtml(m.name)}</span>
-      <button class="btn-danger" style="padding:6px 10px;font-size:11px;color:var(--deep);border-color:var(--border)" onclick="editMenuItem(${i})">編集</button>
-      <button class="btn-danger" style="padding:6px 10px;font-size:11px" onclick="deleteMenuItem(${i})">削除</button>
-    </div>`;
-  }).join('');
-}
-
-function editMenuItem(i) {
-  editingMenuIdx = i;
-  renderMenuItemsSettings();
-}
-
-function cancelMenuItemEdit() {
-  editingMenuIdx = -1;
-  renderMenuItemsSettings();
-}
-
-function saveMenuItemEdit(i) {
-  const code = document.getElementById('mi-edit-code').value.trim();
-  const name = document.getElementById('mi-edit-name').value.trim();
-  if(!code || !name) return alert('略号と名前を入力してください');
-  if(menuItems.some((m,idx) => idx!==i && m.code===code)) return alert('その略号は既に使われています');
-  menuItems[i] = { code, name };
-  saveMenuItems();
-  editingMenuIdx = -1;
-  renderMenuItemsSettings();
-}
-
-function addMenuItem() {
-  const code = document.getElementById('mi-code').value.trim();
-  const name = document.getElementById('mi-name').value.trim();
-  if(!code || !name) return alert('略号と名前を入力してください');
-  if(menuItems.some(m => m.code===code)) return alert('その略号は既に使われています');
-  menuItems.push({ code, name });
-  saveMenuItems();
-  document.getElementById('mi-code').value = '';
-  document.getElementById('mi-name').value = '';
-  renderMenuItemsSettings();
-}
-
-function deleteMenuItem(i) {
-  if(!confirm(`「${menuItems[i].name}」を削除しますか？`)) return;
-  menuItems.splice(i, 1);
-  saveMenuItems();
-  renderMenuItemsSettings();
 }
 
 function saveSettings() {
@@ -1166,7 +1026,6 @@ function exportBackup() {
 // ============================================================
 load();
 loadSettings();
-loadMenuItems();
 renderList();
 </script>
 </body>
