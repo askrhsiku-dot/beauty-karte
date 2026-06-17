@@ -306,7 +306,11 @@ body {
             <div class="form-group"><label class="form-label">来店日</label><input class="form-input" type="date" id="vf-date"></div>
             <div class="form-group"><label class="form-label">担当者</label><input class="form-input" id="vf-stylist" placeholder="山本"></div>
           </div>
-          <div class="form-group"><label class="form-label">メニュー</label><input class="form-input" id="vf-menu" placeholder="カット + カラー"></div>
+          <div class="form-group">
+            <label class="form-label">メニュー</label>
+            <div id="menu-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+            <input class="form-input" id="vf-menu" placeholder="カット + カラー">
+          </div>
           <div class="form-group"><label class="form-label">金額（円）</label><input class="form-input" type="number" id="vf-amount" placeholder="12000"></div>
           <div class="form-group"><label class="form-label">施術メモ</label><textarea class="form-textarea" id="vf-note" placeholder="施術の詳細、お客様の要望など…"></textarea></div>
           <button class="btn-primary" onclick="saveVisit()">記録を保存</button>
@@ -406,8 +410,17 @@ body {
         <label class="form-label">サブタイトル</label>
         <input class="form-input" id="setting-subtitle" placeholder="例：Beauty Salon">
       </div>
-      <button class="btn-primary" onclick="saveSettings()">保存する</button>
-      <button class="btn-secondary" onclick="closePanel('settings-panel')">キャンセル</button>
+      <button class="btn-primary" onclick="saveSettings()">アプリ名を保存</button>
+
+      <div class="section-title" style="margin-top:20px">メニュー略称の編集</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">来店記録入力時に表示されるボタンです。略称と正式名称を設定してください。</div>
+      <div id="menu-editor-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="form-input" id="new-menu-short" placeholder="略称（例：C）" style="width:30%">
+        <input class="form-input" id="new-menu-label" placeholder="正式名称（例：カット）" style="width:70%">
+      </div>
+      <button class="btn-secondary" style="margin-top:8px" onclick="addMenuItem()">＋ メニューを追加</button>
+      <button class="btn-secondary" onclick="closePanel('settings-panel')">閉じる</button>
     </div>
   </div>
 </div>
@@ -958,6 +971,16 @@ function importCSV() {
 // ============================================================
 // SETTINGS
 // ============================================================
+const DEFAULT_MENUS = [
+  { short: 'C',  label: 'カット' },
+  { short: 'H',  label: 'ヘアカラー' },
+  { short: 'P',  label: 'パーマ' },
+  { short: 'Tr', label: 'トリートメント' },
+  { short: 'K',  label: '縮毛矯正' },
+];
+
+let menuItems = [];
+
 function loadSettings() {
   try {
     const s = localStorage.getItem('beauty_karte_settings');
@@ -965,13 +988,76 @@ function loadSettings() {
       const settings = JSON.parse(s);
       if(settings.title) document.getElementById('app-title').textContent = settings.title;
       if(settings.subtitle) document.getElementById('app-subtitle').textContent = settings.subtitle;
+      if(settings.menus) menuItems = settings.menus;
+      else menuItems = [...DEFAULT_MENUS];
+    } else {
+      menuItems = [...DEFAULT_MENUS];
     }
+  } catch(e){ menuItems = [...DEFAULT_MENUS]; }
+}
+
+function saveMenuItems() {
+  try {
+    const s = localStorage.getItem('beauty_karte_settings');
+    const settings = s ? JSON.parse(s) : {};
+    settings.menus = menuItems;
+    localStorage.setItem('beauty_karte_settings', JSON.stringify(settings));
   } catch(e){}
+}
+
+function renderMenuBtns() {
+  const el = document.getElementById('menu-btns');
+  if(!el) return;
+  el.innerHTML = menuItems.map(m => `
+    <button type="button"
+      onclick="appendMenu('${m.label}')"
+      style="background:var(--cream);border:1px solid var(--blush);color:var(--rose);border-radius:20px;padding:6px 12px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500">
+      ${m.short}
+    </button>
+  `).join('');
+}
+
+function appendMenu(label) {
+  const input = document.getElementById('vf-menu');
+  const cur = input.value.trim();
+  input.value = cur ? cur + ' + ' + label : label;
+}
+
+function renderMenuEditor() {
+  const el = document.getElementById('menu-editor-list');
+  if(!el) return;
+  el.innerHTML = menuItems.map((m,i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <input class="form-input" value="${m.short}" onchange="menuItems[${i}].short=this.value;saveMenuItems();renderMenuBtns()" style="width:25%;padding:8px 10px">
+      <input class="form-input" value="${m.label}" onchange="menuItems[${i}].label=this.value;saveMenuItems();renderMenuBtns()" style="flex:1;padding:8px 10px">
+      <button onclick="deleteMenuItem(${i})" style="background:transparent;border:1px solid #f0c0c0;color:var(--danger);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap">削除</button>
+    </div>
+  `).join('');
+}
+
+function addMenuItem() {
+  const short = document.getElementById('new-menu-short').value.trim();
+  const label = document.getElementById('new-menu-label').value.trim();
+  if(!short || !label) return alert('略称と正式名称を両方入力してください');
+  menuItems.push({ short, label });
+  saveMenuItems();
+  renderMenuBtns();
+  renderMenuEditor();
+  document.getElementById('new-menu-short').value = '';
+  document.getElementById('new-menu-label').value = '';
+}
+
+function deleteMenuItem(i) {
+  menuItems.splice(i, 1);
+  saveMenuItems();
+  renderMenuBtns();
+  renderMenuEditor();
 }
 
 function openSettingsPanel() {
   document.getElementById('setting-title').value = document.getElementById('app-title').textContent;
   document.getElementById('setting-subtitle').value = document.getElementById('app-subtitle').textContent;
+  renderMenuEditor();
   openPanel('settings-panel');
 }
 
@@ -981,9 +1067,13 @@ function saveSettings() {
   if(title) document.getElementById('app-title').textContent = title;
   if(subtitle) document.getElementById('app-subtitle').textContent = subtitle;
   try {
-    localStorage.setItem('beauty_karte_settings', JSON.stringify({ title: title||'髪屋工房', subtitle: subtitle||'Beauty Salon' }));
+    const s = localStorage.getItem('beauty_karte_settings');
+    const settings = s ? JSON.parse(s) : {};
+    settings.title = title || '髪屋工房';
+    settings.subtitle = subtitle || 'Beauty Salon';
+    localStorage.setItem('beauty_karte_settings', JSON.stringify(settings));
   } catch(e){}
-  closePanel('settings-panel');
+  alert('アプリ名を保存しました');
 }
 
 // ============================================================
@@ -1031,6 +1121,7 @@ function exportBackup() {
 // ============================================================
 load();
 loadSettings();
+renderMenuBtns();
 renderList();
 </script>
 </body>
