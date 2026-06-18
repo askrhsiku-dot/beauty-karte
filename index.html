@@ -709,12 +709,30 @@ function editVisit(vid) {
       <textarea class="form-textarea" data-menu="${item}" style="min-height:55px" placeholder="${item}のレシピ…">${recipes[item]||v.note||''}</textarea>
     </div>
   `).join('');
+
+  // 選択中メニューのボタンHTML
+  const menuBtnsHtml = menuItems.map(m => {
+    const selected = menuItems2.includes(m.label);
+    const style = selected
+      ? 'background:var(--rose);color:white;border-color:var(--rose)'
+      : 'background:var(--cream);color:var(--rose);border-color:var(--blush)';
+    return `<button type="button" id="ev-menubtn-${vid}-${m.short}"
+      onclick="toggleEditMenu(${vid},'${m.label}','${m.short}')"
+      style="${style};border:1px solid;border-radius:20px;padding:6px 12px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;transition:all 0.15s">
+      ${m.short}
+    </button>`;
+  }).join('');
+
   el.innerHTML = `
     <div class="form-row" style="margin-bottom:8px">
       <div><label class="form-label">来店日</label><input class="form-input" id="ev-date-${vid}" value="${v.date}" type="date"></div>
       <div><label class="form-label">担当者</label><input class="form-input" id="ev-stylist-${vid}" value="${v.stylist||''}" placeholder="山本"></div>
     </div>
-    <div style="margin-bottom:8px"><label class="form-label">メニュー</label><input class="form-input" id="ev-menu-${vid}" value="${v.menu||''}" oninput="updateEditRecipeFields(${vid})"></div>
+    <div style="margin-bottom:8px">
+      <label class="form-label">メニュー選択</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${menuBtnsHtml}</div>
+      <input class="form-input" id="ev-menu-${vid}" value="${v.menu||''}" oninput="updateEditRecipeFields(${vid})">
+    </div>
     <div id="ev-recipe-${vid}" style="margin-bottom:8px">${recipeFields}</div>
     <div style="margin-bottom:8px"><label class="form-label">金額（円）</label><input class="form-input" type="number" id="ev-amount-${vid}" value="${v.amount||''}"></div>
     <div style="display:flex;gap:6px">
@@ -722,6 +740,26 @@ function editVisit(vid) {
       <button class="btn-secondary" style="margin-top:0;padding:10px" onclick="renderVisits(getCustomer(currentId))">キャンセル</button>
     </div>
   `;
+}
+
+function toggleEditMenu(vid, label, short) {
+  const input = document.getElementById(`ev-menu-${vid}`);
+  const btn = document.getElementById(`ev-menubtn-${vid}-${short}`);
+  const items = input.value.split('+').map(s=>s.trim()).filter(Boolean);
+  const idx = items.indexOf(label);
+  if(idx >= 0) {
+    items.splice(idx, 1);
+    btn.style.background = 'var(--cream)';
+    btn.style.color = 'var(--rose)';
+    btn.style.borderColor = 'var(--blush)';
+  } else {
+    items.push(label);
+    btn.style.background = 'var(--rose)';
+    btn.style.color = 'white';
+    btn.style.borderColor = 'var(--rose)';
+  }
+  input.value = items.join(' + ');
+  updateEditRecipeFields(vid);
 }
 
 function updateEditRecipeFields(vid) {
@@ -778,7 +816,25 @@ function toggleVisitForm() {
   const btn = document.getElementById('visit-toggle-btn');
   const open = box.classList.toggle('open');
   btn.textContent = open ? '✕ キャンセル' : '＋ 来店記録を追加';
-  if(open) document.getElementById('vf-date').value = new Date().toISOString().split('T')[0];
+  if(open) {
+    document.getElementById('vf-date').value = new Date().toISOString().split('T')[0];
+  } else {
+    // フォームを閉じたときボタンの選択状態をリセット
+    resetMenuBtns();
+    document.getElementById('vf-menu').value = '';
+    document.getElementById('vf-recipe-fields').innerHTML = '';
+  }
+}
+
+function resetMenuBtns() {
+  menuItems.forEach(m => {
+    const btn = document.getElementById(`menubtn-${m.short}`);
+    if(btn) {
+      btn.style.background = 'var(--cream)';
+      btn.style.color = 'var(--rose)';
+      btn.style.borderColor = 'var(--blush)';
+    }
+  });
 }
 
 function saveVisit() {
@@ -800,6 +856,7 @@ function saveVisit() {
   renderList();
   ['vf-menu','vf-amount','vf-stylist'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('vf-recipe-fields').innerHTML='';
+  resetMenuBtns();
   toggleVisitForm();
 }
 
