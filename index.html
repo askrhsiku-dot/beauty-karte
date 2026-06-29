@@ -624,6 +624,9 @@ function renderList() {
 function openDetail(id) {
   currentId = id;
   const c = getCustomer(id);
+  // 常に日付降順に並び替えて保存
+  c.visits.sort((a,b)=>b.date.localeCompare(a.date));
+  save();
   document.getElementById('detail-avatar').textContent = initials(c.name);
   document.getElementById('detail-name').textContent = c.name;
   document.getElementById('detail-kana').textContent = c.kana;
@@ -1321,6 +1324,9 @@ function exportBackup() {
 // INIT
 // ============================================================
 load();
+// 既存データの来店履歴を全て日付降順に整列
+customers.forEach(c => c.visits.sort((a,b)=>b.date.localeCompare(a.date)));
+save();
 loadSettings();
 renderMenuBtns();
 renderList();
