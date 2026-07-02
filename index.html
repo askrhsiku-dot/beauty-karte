@@ -234,8 +234,8 @@ body {
 <body>
 <!-- LOCK SCREEN -->
 <div id="lock-screen">
-  <div class="lock-title">✦ 髪屋工房</div>
-  <div class="lock-sub">Client Record — Private</div>
+  <div class="lock-title" id="lock-title">✦ 髪屋工房</div>
+  <div class="lock-sub" id="lock-sub">Client Record — Private</div>
   <input type="password" id="lock-input" placeholder="パスワードを入力" inputmode="numeric">
   <button onclick="checkLock()">開く</button>
   <div id="lock-error"></div>
@@ -1260,8 +1260,14 @@ function loadSettings() {
     const s = localStorage.getItem('beauty_karte_settings');
     if(s) {
       const settings = JSON.parse(s);
-      if(settings.title) document.getElementById('app-title').textContent = settings.title;
-      if(settings.subtitle) document.getElementById('app-subtitle').textContent = settings.subtitle;
+      if(settings.title) {
+        document.getElementById('app-title').textContent = settings.title;
+        document.getElementById('lock-title').textContent = '✦ ' + settings.title;
+      }
+      if(settings.subtitle) {
+        document.getElementById('app-subtitle').textContent = settings.subtitle;
+        document.getElementById('lock-sub').textContent = settings.subtitle;
+      }
       if(settings.menus) menuItems = settings.menus;
       else menuItems = [...DEFAULT_MENUS];
     } else {
@@ -1510,6 +1516,16 @@ function changePassword() {
 document.getElementById('lock-input').addEventListener('keydown', e => {
   if(e.key === 'Enter') checkLock();
 });
+
+// ロック画面表示時にアプリ名を反映
+try {
+  const s = localStorage.getItem('beauty_karte_settings');
+  if(s) {
+    const settings = JSON.parse(s);
+    if(settings.title) document.getElementById('lock-title').textContent = '✦ ' + settings.title;
+    if(settings.subtitle) document.getElementById('lock-sub').textContent = settings.subtitle;
+  }
+} catch(e){}
 
 // このセッション内ですでに解除済みならロック画面をスキップ
 try {
