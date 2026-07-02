@@ -460,6 +460,23 @@ body {
       </div>
       <button class="btn-primary" onclick="saveSettings()">アプリ名を保存</button>
 
+      <div class="section-title" style="margin-top:20px">🔑 パスワード変更</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">アプリを開く時のパスワードを変更できます。</div>
+      <div class="form-group">
+        <label class="form-label">現在のパスワード</label>
+        <input class="form-input" type="password" id="setting-pw-current" placeholder="現在のパスワード" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード</label>
+        <input class="form-input" type="password" id="setting-pw-new" placeholder="新しいパスワード" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード（確認）</label>
+        <input class="form-input" type="password" id="setting-pw-confirm" placeholder="もう一度入力" inputmode="numeric">
+      </div>
+      <div id="pw-change-msg" style="font-size:12px;min-height:16px;margin-bottom:4px"></div>
+      <button class="btn-secondary" style="margin-top:0" onclick="changePassword()">パスワードを変更する</button>
+
       <div class="section-title" style="margin-top:20px">☁️ スプレッドシート自動バックアップ</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Google Apps ScriptのURLを貼り付けてください。設定するとワンタップでスプレッドシートに保存できます。</div>
       <div class="form-group">
@@ -1424,12 +1441,20 @@ function exportBackup() {
 // ============================================================
 // LOCK SCREEN
 // ============================================================
-const LOCK_PASSWORD = '0629'; // ここを好きな数字に変更できます
+const DEFAULT_PASSWORD = '0629';
+
+function getCurrentPassword() {
+  try {
+    const s = localStorage.getItem('beauty_karte_settings');
+    if(s) return JSON.parse(s).password || DEFAULT_PASSWORD;
+  } catch(e){}
+  return DEFAULT_PASSWORD;
+}
 
 function checkLock() {
   const input = document.getElementById('lock-input').value;
   const err = document.getElementById('lock-error');
-  if(input === LOCK_PASSWORD) {
+  if(input === getCurrentPassword()) {
     try { sessionStorage.setItem('karte_unlocked', '1'); } catch(e){}
     document.getElementById('lock-screen').style.display = 'none';
     document.getElementById('main-app').style.display = 'flex';
@@ -1437,6 +1462,43 @@ function checkLock() {
   } else {
     err.textContent = 'パスワードが違います';
     document.getElementById('lock-input').value = '';
+  }
+}
+
+function changePassword() {
+  const current = document.getElementById('setting-pw-current').value;
+  const newPw = document.getElementById('setting-pw-new').value;
+  const confirm = document.getElementById('setting-pw-confirm').value;
+  const msg = document.getElementById('pw-change-msg');
+
+  if(current !== getCurrentPassword()) {
+    msg.textContent = '❌ 現在のパスワードが違います';
+    msg.style.color = 'var(--danger)';
+    return;
+  }
+  if(!newPw) {
+    msg.textContent = '❌ 新しいパスワードを入力してください';
+    msg.style.color = 'var(--danger)';
+    return;
+  }
+  if(newPw !== confirm) {
+    msg.textContent = '❌ 新しいパスワードが一致しません';
+    msg.style.color = 'var(--danger)';
+    return;
+  }
+  try {
+    const s = localStorage.getItem('beauty_karte_settings');
+    const settings = s ? JSON.parse(s) : {};
+    settings.password = newPw;
+    localStorage.setItem('beauty_karte_settings', JSON.stringify(settings));
+    msg.textContent = '✅ パスワードを変更しました';
+    msg.style.color = '#7BA88A';
+    document.getElementById('setting-pw-current').value = '';
+    document.getElementById('setting-pw-new').value = '';
+    document.getElementById('setting-pw-confirm').value = '';
+  } catch(e) {
+    msg.textContent = '❌ 保存に失敗しました';
+    msg.style.color = 'var(--danger)';
   }
 }
 
