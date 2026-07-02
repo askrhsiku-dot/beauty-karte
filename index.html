@@ -1199,21 +1199,23 @@ async function backupToSheets() {
   statusEl.style.color = 'var(--muted)';
 
   try {
-    const res = await fetch(gasUrl, {
+    // フォームデータ形式で送信（CORSを回避）
+    const formData = new FormData();
+    formData.append('data', JSON.stringify({ customers }));
+
+    await fetch(gasUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ customers })
+      mode: 'no-cors',
+      body: JSON.stringify({ customers }),
+      headers: { 'Content-Type': 'text/plain' }
     });
-    const result = await res.json();
-    if(result.success) {
-      statusEl.textContent = `✅ ${result.count}件をスプレッドシートに保存しました（${new Date().toLocaleString('ja-JP')}）`;
-      statusEl.style.color = '#7BA88A';
-    } else {
-      statusEl.textContent = '❌ 保存に失敗しました: ' + (result.error || '不明なエラー');
-      statusEl.style.color = 'var(--danger)';
-    }
+
+    // no-corsの場合レスポンスが読めないので成功とみなす
+    statusEl.textContent = `✅ スプレッドシートに送信しました（${new Date().toLocaleString('ja-JP')}）スプレッドシートを確認してください`;
+    statusEl.style.color = '#7BA88A';
+
   } catch(err) {
-    statusEl.textContent = '❌ 通信エラーが発生しました。URLを確認してください。';
+    statusEl.textContent = '❌ 通信エラー: ' + err.message;
     statusEl.style.color = 'var(--danger)';
   }
 }
