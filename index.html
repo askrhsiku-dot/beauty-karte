@@ -202,10 +202,42 @@ body {
 
 /* PANEL AVATAR */
 .panel-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--blush), var(--rose)); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 16px; color: white; flex-shrink: 0; }
+
+/* LOCK SCREEN */
+#lock-screen {
+  position: fixed; inset: 0; background: var(--deep);
+  z-index: 999; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px;
+  max-width: 430px; left: 50%; transform: translateX(-50%); width: 100%;
+}
+#lock-screen .lock-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--cream); letter-spacing: 3px; margin-bottom: 6px; }
+#lock-screen .lock-sub { font-size: 11px; color: var(--blush); letter-spacing: 2px; margin-bottom: 32px; text-transform: uppercase; }
+#lock-screen input {
+  width: 100%; max-width: 280px; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  padding: 14px 16px; font-size: 16px; letter-spacing: 4px; text-align: center;
+  color: var(--cream); outline: none; margin-bottom: 14px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+#lock-screen input::placeholder { color: rgba(255,255,255,0.3); letter-spacing: 1px; }
+#lock-screen button {
+  width: 100%; max-width: 280px; background: var(--rose); color: white;
+  border: none; border-radius: 12px; padding: 14px; font-size: 14px;
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 500; cursor: pointer;
+}
+#lock-error { color: #E8998A; font-size: 12px; margin-top: 10px; min-height: 16px; }
 </style>
 </head>
 <body>
-<div class="app">
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-title">✦ 髪屋工房</div>
+  <div class="lock-sub">Client Record — Private</div>
+  <input type="password" id="lock-input" placeholder="パスワードを入力" inputmode="numeric">
+  <button onclick="checkLock()">開く</button>
+  <div id="lock-error"></div>
+</div>
+<div class="app" id="main-app" style="display:none">
   <!-- HEADER -->
   <div class="header">
     <div>
@@ -1321,15 +1353,49 @@ function exportBackup() {
 }
 
 // ============================================================
+// LOCK SCREEN
+// ============================================================
+const LOCK_PASSWORD = '1983'; // ここを好きな数字に変更できます
+
+function checkLock() {
+  const input = document.getElementById('lock-input').value;
+  const err = document.getElementById('lock-error');
+  if(input === LOCK_PASSWORD) {
+    try { sessionStorage.setItem('karte_unlocked', '1'); } catch(e){}
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'flex';
+    initApp();
+  } else {
+    err.textContent = 'パスワードが違います';
+    document.getElementById('lock-input').value = '';
+  }
+}
+
+document.getElementById('lock-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter') checkLock();
+});
+
+// このセッション内ですでに解除済みならロック画面をスキップ
+try {
+  if(sessionStorage.getItem('karte_unlocked') === '1') {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'flex';
+    initApp();
+  }
+} catch(e){}
+
+// ============================================================
 // INIT
 // ============================================================
-load();
-// 既存データの来店履歴を全て日付降順に整列
-customers.forEach(c => c.visits.sort((a,b)=>b.date.localeCompare(a.date)));
-save();
-loadSettings();
-renderMenuBtns();
-renderList();
+function initApp() {
+  load();
+  // 既存データの来店履歴を全て日付降順に整列
+  customers.forEach(c => c.visits.sort((a,b)=>b.date.localeCompare(a.date)));
+  save();
+  loadSettings();
+  renderMenuBtns();
+  renderList();
+}
 </script>
 </body>
 </html>
